@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>LEARN VOCABULARY</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Mali&display=swap" rel="stylesheet">
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-family: 'Mali', sans-serif;
+      font-size: 20px;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 8px;
+      text-align: center;
+    }
+    td.clickable {
+      cursor: pointer;
+    }
+    td.hidden {
+      color: transparent;
+      background-color: #f0f0f0;
+    }
+    .correct {
+      background-color: #cce5ff !important;
+    }
+    .incorrect {
+      background-color: #f8d7da !important;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+    }
+    .btn {
+      cursor: pointer;
+      padding: 2px 6px;
+      border: none;
+      border-radius: 4px;
+      font-size: 18px;
+    }
+    .btn.correct {
+      background-color: #007bff;
+      color: white;
+    }
+    .btn.incorrect {
+      background-color: #dc3545;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Import File Excel</h2>
+<input type="file" id="input-excel" accept=".xlsx" />
+
+<div id="table-container"></div>
+
+<script>
+  document.getElementById('input-excel').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      let html = "<table><thead><tr>";
+      html += "<th>✔️</th><th>❌</th>"; // หัวคอลัมน์ใหม่
+      json[0].forEach(header => {
+        html += `<th>${header}</th>`;
+      });
+      html += "</tr></thead><tbody>";
+
+      for (let i = 1; i < json.length; i++) {
+        html += `<tr>`;
+        // ปุ่ม ✔️ กับ ❌
+        html += `
+          <td>
+            <button class="btn correct" onclick="markRow(this, 'correct')">✔️</button>
+          </td>
+          <td>
+            <button class="btn incorrect" onclick="markRow(this, 'incorrect')">❌</button>
+          </td>
+        `;
+        json[i].forEach(cell => {
+          html += `<td class="clickable" onclick="toggle(this)">${cell ?? ''}</td>`;
+        });
+        html += `</tr>`;
+      }
+
+      html += "</tbody></table>";
+      document.getElementById('table-container').innerHTML = html;
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  function toggle(cell) {
+    cell.classList.toggle('hidden');
+  }
+
+  function markRow(button, status) {
+    const row = button.closest('tr');
+    // ตรวจสอบว่ามีคลาส correct หรือ incorrect แล้วหรือยัง
+    if (status === 'correct') {
+      // ถ้าคลิกปุ่ม ✔️ และแถวมีคลาส correct อยู่แล้ว ลบคลาสออก
+      if (row.classList.contains('correct')) {
+        row.classList.remove('correct');
+      } else {
+        // ถ้าไม่มีก็เพิ่มเข้าไป
+        row.classList.add('correct');
+      }
+      // ถ้ามีคลาส incorrect ลบออก
+      row.classList.remove('incorrect');
+    } else if (status === 'incorrect') {
+      // ถ้าคลิกปุ่ม ❌ และแถวมีคลาส incorrect อยู่แล้ว ลบคลาสออก
+      if (row.classList.contains('incorrect')) {
+        row.classList.remove('incorrect');
+      } else {
+        // ถ้าไม่มีก็เพิ่มเข้าไป
+        row.classList.add('incorrect');
+      }
+      // ถ้ามีคลาส correct ลบออก
+      row.classList.remove('correct');
+    }
+  }
+</script>
+
+</body>
+</html>
